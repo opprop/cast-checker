@@ -4,7 +4,7 @@ WORKING_DIR=$(pwd)
 ROOT=$(cd $(dirname "$0")/.. && pwd)
 JAVAC=$ROOT/checker-framework/checker/bin-devel/javac
 
-CAST_CHECKER=$ROOT/cast_checker
+CAST_CHECKER=$ROOT/cast-checker
 
 cd $WORKING_DIR
 
