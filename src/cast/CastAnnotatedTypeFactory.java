@@ -1,8 +1,11 @@
 package cast;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.type.TypeMirror;
@@ -23,8 +26,8 @@ import org.checkerframework.framework.type.AnnotatedTypeFactory;
 import org.checkerframework.framework.type.AnnotatedTypeMirror;
 import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedArrayType;
 import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedExecutableType;
-import org.checkerframework.framework.type.treeannotator.ImplicitsTreeAnnotator;
 import org.checkerframework.framework.type.treeannotator.ListTreeAnnotator;
+import org.checkerframework.framework.type.treeannotator.LiteralTreeAnnotator;
 import org.checkerframework.framework.type.treeannotator.PropagationTreeAnnotator;
 import org.checkerframework.framework.type.treeannotator.TreeAnnotator;
 import org.checkerframework.framework.type.typeannotator.ListTypeAnnotator;
@@ -55,59 +58,82 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
         return new ListTypeAnnotator(new CastTypeAnnotator(this), super.createTypeAnnotator());
     }
 	
-    @Override
-    protected void addCheckedCodeDefaults(QualifierDefaults defs) {
-		TypeUseLocation[] useLocation = {TypeUseLocation.PARAMETER, TypeUseLocation.FIELD};
-    	AnnotationMirror anno;
-    	
-    	anno = createIntRangeAnnotation(Range.BYTE_EVERYTHING);
-    	TypeKind[] byte_type = {TypeKind.BYTE};
-    	defs.addCheckedCodeDefaults(anno, useLocation, byte_type);
-    	
-    	anno = createIntRangeAnnotation(Range.CHAR_EVERYTHING);
-    	TypeKind[] char_type = {TypeKind.CHAR};
-    	defs.addCheckedCodeDefaults(anno, useLocation, char_type);
-    	
-    	anno = createIntRangeAnnotation(Range.SHORT_EVERYTHING);
-    	TypeKind[] short_type = {TypeKind.SHORT};
-    	defs.addCheckedCodeDefaults(anno, useLocation, short_type);
-    	
-    	anno = createIntRangeAnnotation(Range.INT_EVERYTHING);
-    	TypeKind[] int_type = {TypeKind.INT};
-    	defs.addCheckedCodeDefaults(anno, useLocation, int_type);
-    	
-        super.addCheckedCodeDefaults(defs);
-    }
-    
-    @Override
-    protected void addUncheckedCodeDefaults(QualifierDefaults defs) {
-    	TypeUseLocation[] useLocation = {TypeUseLocation.PARAMETER, TypeUseLocation.FIELD};
-    	AnnotationMirror anno;
-    	
-    	anno = createIntRangeAnnotation(Range.BYTE_EVERYTHING);
-    	TypeKind[] byte_type = {TypeKind.BYTE};
-    	defs.addUncheckedCodeDefaults(anno, useLocation, byte_type);
-    	
-    	anno = createIntRangeAnnotation(Range.CHAR_EVERYTHING);
-    	TypeKind[] char_type = {TypeKind.CHAR};
-    	defs.addUncheckedCodeDefaults(anno, useLocation, char_type);
-    	
-    	anno = createIntRangeAnnotation(Range.SHORT_EVERYTHING);
-    	TypeKind[] short_type = {TypeKind.SHORT};
-    	defs.addUncheckedCodeDefaults(anno, useLocation, short_type);
-    	
-    	anno = createIntRangeAnnotation(Range.INT_EVERYTHING);
-    	TypeKind[] int_type = {TypeKind.INT};
-    	defs.addUncheckedCodeDefaults(anno, useLocation, int_type);
-    	
-        super.addUncheckedCodeDefaults(defs);
-    }
+	protected static final Set<String> COVERED_CLASS_STRINGS =
+            Collections.unmodifiableSet(
+                    new HashSet<>(
+                            Arrays.asList(
+                                    "int",
+                                    "java.lang.Integer",
+                                    "double",
+                                    "java.lang.Double",
+                                    "byte",
+                                    "java.lang.Byte",
+                                    "java.lang.String",
+                                    "char",
+                                    "java.lang.Character",
+                                    "float",
+                                    "java.lang.Float",
+                                    "boolean",
+                                    "java.lang.Boolean",
+                                    "long",
+                                    "java.lang.Long",
+                                    "short",
+                                    "java.lang.Short",
+                                    "char[]")));
+	
+//    @Override
+//    protected void addCheckedCodeDefaults(QualifierDefaults defs) {
+//		TypeUseLocation[] useLocation = {TypeUseLocation.PARAMETER, TypeUseLocation.FIELD};
+//    	AnnotationMirror anno;
+//    	
+//    	anno = createIntRangeAnnotation(Range.BYTE_EVERYTHING);
+//    	TypeKind[] byte_type = {TypeKind.BYTE};
+//    	defs.addCheckedCodeDefaults(anno, useLocation, byte_type);
+//    	
+//    	anno = createIntRangeAnnotation(Range.CHAR_EVERYTHING);
+//    	TypeKind[] char_type = {TypeKind.CHAR};
+//    	defs.addCheckedCodeDefaults(anno, useLocation, char_type);
+//    	
+//    	anno = createIntRangeAnnotation(Range.SHORT_EVERYTHING);
+//    	TypeKind[] short_type = {TypeKind.SHORT};
+//    	defs.addCheckedCodeDefaults(anno, useLocation, short_type);
+//    	
+//    	anno = createIntRangeAnnotation(Range.INT_EVERYTHING);
+//    	TypeKind[] int_type = {TypeKind.INT};
+//    	defs.addCheckedCodeDefaults(anno, useLocation, int_type);
+//    	
+//        super.addCheckedCodeDefaults(defs);
+//    }
+//    
+//    @Override
+//    protected void addUncheckedCodeDefaults(QualifierDefaults defs) {
+//    	TypeUseLocation[] useLocation = {TypeUseLocation.PARAMETER, TypeUseLocation.FIELD};
+//    	AnnotationMirror anno;
+//    	
+//    	anno = createIntRangeAnnotation(Range.BYTE_EVERYTHING);
+//    	TypeKind[] byte_type = {TypeKind.BYTE};
+//    	defs.addUncheckedCodeDefaults(anno, useLocation, byte_type);
+//    	
+//    	anno = createIntRangeAnnotation(Range.CHAR_EVERYTHING);
+//    	TypeKind[] char_type = {TypeKind.CHAR};
+//    	defs.addUncheckedCodeDefaults(anno, useLocation, char_type);
+//    	
+//    	anno = createIntRangeAnnotation(Range.SHORT_EVERYTHING);
+//    	TypeKind[] short_type = {TypeKind.SHORT};
+//    	defs.addUncheckedCodeDefaults(anno, useLocation, short_type);
+//    	
+//    	anno = createIntRangeAnnotation(Range.INT_EVERYTHING);
+//    	TypeKind[] int_type = {TypeKind.INT};
+//    	defs.addUncheckedCodeDefaults(anno, useLocation, int_type);
+//    	
+//        super.addUncheckedCodeDefaults(defs);
+//    }
 	
     /**
      * Performs pre-processing on annotations written by users, replacing illegal annotations by
      * legal ones.
      */
-    private class CastTypeAnnotator extends ValueTypeAnnotator {
+    private class CastTypeAnnotator extends TypeAnnotator {
 
         private CastTypeAnnotator(AnnotatedTypeFactory atypeFactory) {
             super(atypeFactory);
@@ -119,44 +145,44 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
         }
         
 
-        @Override
-        public Void visitExecutable(AnnotatedExecutableType t, Void p) {
-			List<AnnotatedTypeMirror> paramTypes = t.getParameterTypes();
-			for (AnnotatedTypeMirror paramType : paramTypes) {
-				if (paramType.getKind() == TypeKind.mapTypeKind(TypeKind.ARRAY)) {
-					AnnotatedTypeMirror compType = ((AnnotatedArrayType)paramType).getComponentType();
-					AnnotationMirror anno = createIntRangeAnnotations(compType);
-		        	if (anno != null) {
-		        		compType.addMissingAnnotations(Collections.singleton(anno));
-					}
-		        	scan(((AnnotatedArrayType)paramType).getComponentType(), p);
-		        	continue;
-				}
-				
-				AnnotationMirror anno = createIntRangeAnnotations(paramType);
-				if (anno != null) {
-					paramType.addMissingAnnotations(Collections.singleton(anno));
-				}
-			}
-			
-			AnnotatedTypeMirror retType = t.getReturnType();
-			if (retType.getKind() == TypeKind.mapTypeKind(TypeKind.ARRAY)) {
-				AnnotatedTypeMirror compType = ((AnnotatedArrayType)retType).getComponentType();
-				AnnotationMirror anno = createIntRangeAnnotations(compType);
-	        	if (anno != null) {
-	        		compType.addMissingAnnotations(Collections.singleton(anno));
-				}
-	        	scan(((AnnotatedArrayType)retType).getComponentType(), p);
-	        	return super.visitExecutable(t, p);
-			}
-			
-			AnnotationMirror anno = createIntRangeAnnotations(retType);
-			if (anno != null) {
-				retType.addMissingAnnotations(Collections.singleton(anno));
-			}
-        	
-            return super.visitExecutable(t, p);
-        }
+//        @Override
+//        public Void visitExecutable(AnnotatedExecutableType t, Void p) {
+//			List<AnnotatedTypeMirror> paramTypes = t.getParameterTypes();
+//			for (AnnotatedTypeMirror paramType : paramTypes) {
+//				if (paramType.getKind() == TypeKind.mapTypeKind(TypeKind.ARRAY)) {
+//					AnnotatedTypeMirror compType = ((AnnotatedArrayType)paramType).getComponentType();
+//					AnnotationMirror anno = createIntRangeAnnotations(compType);
+//		        	if (anno != null) {
+//		        		compType.addMissingAnnotations(Collections.singleton(anno));
+//					}
+//		        	scan(((AnnotatedArrayType)paramType).getComponentType(), p);
+//		        	continue;
+//				}
+//				
+//				AnnotationMirror anno = createIntRangeAnnotations(paramType);
+//				if (anno != null) {
+//					paramType.addMissingAnnotations(Collections.singleton(anno));
+//				}
+//			}
+//			
+//			AnnotatedTypeMirror retType = t.getReturnType();
+//			if (retType.getKind() == TypeKind.mapTypeKind(TypeKind.ARRAY)) {
+//				AnnotatedTypeMirror compType = ((AnnotatedArrayType)retType).getComponentType();
+//				AnnotationMirror anno = createIntRangeAnnotations(compType);
+//	        	if (anno != null) {
+//	        		compType.addMissingAnnotations(Collections.singleton(anno));
+//				}
+//	        	scan(((AnnotatedArrayType)retType).getComponentType(), p);
+//	        	return super.visitExecutable(t, p);
+//			}
+//			
+//			AnnotationMirror anno = createIntRangeAnnotations(retType);
+//			if (anno != null) {
+//				retType.addMissingAnnotations(Collections.singleton(anno));
+//			}
+//        	
+//            return super.visitExecutable(t, p);
+//        }
         
         private AnnotationMirror createIntRangeAnnotations(AnnotatedTypeMirror atm) {
 			AnnotationMirror newAnno;
@@ -188,7 +214,7 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
         }
     }
 	
-	@Override
+    @Override
     protected TreeAnnotator createTreeAnnotator() {
         // Don't call super.createTreeAnnotator because it includes the PropagationTreeAnnotator.
         // Only use the PropagationTreeAnnotator for typing new arrays.  The Value Checker
@@ -205,10 +231,12 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
                     }
                 };
         return new ListTreeAnnotator(
-                new CastTreeAnnotator(this), new ImplicitsTreeAnnotator(this), arrayCreation);
+                new CastTreeAnnotator(this),
+                new LiteralTreeAnnotator(this).addStandardLiteralQualifiers(),
+                arrayCreation);
     }
 	
-	protected class CastTreeAnnotator extends ValueTreeAnnotator {
+	protected class CastTreeAnnotator extends TreeAnnotator {
 		public CastTreeAnnotator(CastAnnotatedTypeFactory factory) {
             super(factory);
         }
@@ -362,24 +390,24 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
 
         /** Return true if this range contains unsigned part of {@code short} value. */
         private boolean isUnsignedShort(Range range) {
-        	return !range.intersect(new Range(Short.MAX_VALUE + 1, Short.MAX_VALUE * 2 + 1)).isNothing()
+        	return !range.intersect(Range.create(Short.MAX_VALUE + 1, Short.MAX_VALUE * 2 + 1)).isNothing()
         			&& !range.contains(Range.SHORT_EVERYTHING);
         }
 
         /** Return true if this range contains unsigned part of {@code byte} value. */
         private boolean isUnsignedByte(Range range) {
-            return !range.intersect(new Range(Byte.MAX_VALUE + 1, Byte.MAX_VALUE * 2 + 1)).isNothing()
+            return !range.intersect(Range.create(Byte.MAX_VALUE + 1, Byte.MAX_VALUE * 2 + 1)).isNothing()
             		&& !range.contains(Range.BYTE_EVERYTHING);
         }
         
         /** A range containing all possible unsigned byte values. */      
         private Range unsignedByteRange() {
-            return new Range(0, Byte.MAX_VALUE * 2 + 1);
+            return Range.create(0, Byte.MAX_VALUE * 2 + 1);
         }
         
         /** A range containing all possible unsigned short values. */      
         private Range unsignedShortRange() {
-            return new Range(0, Short.MAX_VALUE * 2 + 1);
+            return Range.create(0, Short.MAX_VALUE * 2 + 1);
         }
 	}
 }

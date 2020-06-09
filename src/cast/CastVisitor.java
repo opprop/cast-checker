@@ -16,7 +16,6 @@ import org.checkerframework.dataflow.cfg.node.BitwiseAndNode;
 import org.checkerframework.dataflow.cfg.node.Node;
 import org.checkerframework.dataflow.cfg.node.WideningConversionNode;
 import org.checkerframework.framework.flow.CFValue;
-import org.checkerframework.framework.source.Result;
 import org.checkerframework.framework.type.AnnotatedTypeMirror;
 import org.checkerframework.javacutil.AnnotationBuilder;
 import org.checkerframework.javacutil.AnnotationUtils;
@@ -42,7 +41,7 @@ public class CastVisitor extends ValueVisitor {
 
 	/** Return true if this range contains unsigned part of {@code byte} value. */
 	private boolean isUnsignedByte(Range range) {
-		return !range.intersect(new Range(Byte.MAX_VALUE + 1, Byte.MAX_VALUE * 2 + 1)).isNothing()
+		return !range.intersect(Range.create(Byte.MAX_VALUE + 1, Byte.MAX_VALUE * 2 + 1)).isNothing()
 				&& !range.contains(Range.BYTE_EVERYTHING);
 	}
 	
@@ -59,7 +58,7 @@ public class CastVisitor extends ValueVisitor {
             if (AnnotationUtils.areSameByClass(valueAnno, IntRange.class)) {
 	            Range range = ValueAnnotatedTypeFactory.getRange(valueAnno);
 	        	if (isUnsignedByte(range)) {
-	        		checker.report(Result.warning(errorKey, valueType, varType), valueTree);
+	        		checker.reportWarning(valueTree, errorKey, valueType, varType);
 	        	}
             }
         }
@@ -71,7 +70,7 @@ public class CastVisitor extends ValueVisitor {
 		// type cast safety for byte casting is already being checked
 		AnnotatedTypeMirror castType = atypeFactory.getAnnotatedType(node);
 		if (castType.getUnderlyingType().getKind() != TypeKind.BYTE) {
-			checkTypecastSafety(node, p);
+			checkTypecastSafety(node);
 		}
 
 		return super.visitTypeCast(node, p);
@@ -108,7 +107,7 @@ public class CastVisitor extends ValueVisitor {
 		if (isUnsighedByteWideningConversion(node)) {
 			AnnotatedTypeMirror targetType = atypeFactory.getAnnotatedType(target);
 			AnnotatedTypeMirror exprType = atypeFactory.getAnnotatedType(node.getTree());
-			checker.report(Result.warning("cast.unsafe", exprType, targetType), target);
+			checker.reportError(target, "cast.unsafe", exprType, targetType);
 		}
 	}
 

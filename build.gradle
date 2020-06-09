@@ -1,0 +1,219 @@
+/// Why doesn't this work on Travis under Java 7?
+/// The same text does in Randoop's build.gradle file.
+plugins {
+    // Plugin that applies Google-Java-format to the Java files in the project.
+    // https://github.com/sherter/google-java-format-gradle-plugin
+    // id 'com.github.sherter.google-java-format' version '0.6'
+    id 'org.ajoberstar.grgit' version '3.1.1' apply false
+}
+
+import org.ajoberstar.grgit.Grgit
+
+
+apply plugin: 'java'
+
+ext {
+    assert JavaVersion.current() == JavaVersion.VERSION_1_8: "Set JAVA_HOME to JDK 8. Current version is ${JavaVersion.current()}"
+    jsr308 = System.getenv('JSR308') ?: file(new File("..")).absolutePath
+    cfPath = "${jsr308}/checker-framework"
+    jsr308langtoolsPath = "${jsr308}/jsr308-langtools"
+    afu = "${jsr308}/annotation-tools/annotation-file-utilities"
+    castPath = "${jsr308}/cast-checker"
+}
+
+println '==================================='
+println '         Cast Checker           '
+println '==================================='
+println ''
+println '-------------------------------'
+println 'Important Environment Variables'
+println '-------------------------------'
+println 'JSR308: ' + jsr308
+println 'CF:     ' + cfPath
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    compile fileTree(dir: "${cfPath}/checker/dist", include: "checker.jar")
+
+    // CF test lib dependency
+    testCompile fileTree(dir: "${cfPath}/framework-test/build/libs", include: "framework-test-*.jar")
+    testCompile 'junit:junit:4.12'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ["src"]
+        }
+
+        resources {
+            srcDirs = ["src"]
+            include "**/*.astub"
+        }
+    }
+
+    test {
+        java {
+            // TODO: we shouldn't need source level dependency on CFITest
+            srcDirs = ["tests"]
+        }
+    }
+}
+
+compileJava {
+    options.compilerArgs = [
+            '-implicit:class',
+            '-Awarns',
+            '-Xmaxwarns', '10000',
+    ]
+}
+
+afterEvaluate {
+    // Create a task for each JUnit test class whose name is the same as the JUnit class name.
+    sourceSets.test.allJava.filter { it.path.contains("${castPath}/tests") }.forEach { file ->
+        String junitClassName = file.name.replaceAll(".java", "")
+        String testName = junitClassName.replaceAll("Test", "")
+        tasks.create(name: "${junitClassName}", type: Test) {
+            description "Run ${testName} tests."
+            include "**/${name}.class"
+        }
+    }
+
+    // Configure JUnit tests
+    tasks.withType(Test) {
+        group 'Verification'
+
+        systemProperties 'path.afu.scripts': "${afu}/scripts",
+                JDK_JAR: "${cfPath}/checker/dist/jdk8.jar"
+
+        environment "external_checker_classpath", "${castPath}/build/classes/java/main:${castPath}/build/libs/cast-checker.jar"
+
+        jvmArgs "-Xbootclasspath/p:${cfPath}/dist/javac.jar"
+
+        testLogging {
+            // Always run the tests
+            outputs.upToDateWhen { false }
+            // The following prints out each time a test is passed.
+            events "passed", "skipped", "failed", "standardOut", "standardError"
+
+            // Show the found unexpected diagnostics and expected diagnostics not found.
+            exceptionFormat "full"
+            showExceptions true
+            showCauses true
+            showStackTraces true
+            showStandardStreams true
+        }
+
+        // After each test, print a summary.
+        afterSuite { desc, result ->
+            if (desc.getClassName() != null) {
+                long mils = result.getEndTime() - result.getStartTime()
+                double seconds = mils / 1000.0
+
+                println "Testsuite: ${desc.getClassName()}\n" +
+                        "Tests run: ${result.testCount}, " +
+                        "Failures: ${result.failedTestCount}, " +
+                        "Skipped: ${result.skippedTestCount}, " +
+                        "Time elapsed: ${seconds} sec\n"
+            }
+        }
+    }
+}
+
+tasks.clean {
+    delete += "build"
+    delete += "dist"
+    delete += "testdata"
+}
+
+/* Configuration for formatting */
+/* Copy from https://github.com/randoop/randoop/blob/master/build.gradle */
+task getCodeFormatScripts {
+    description "Obtain the run-google-java-format scripts"
+    doLast {
+        if (! new File("$projectDir/build/utils/.run-google-java-format").exists()) {
+            Grgit.clone(dir: "$projectDir/build/utils/.run-google-java-format", uri: 'https://github.com/plume-lib/run-google-java-format.git')
+        } else {
+            def rgjfGit = Grgit.open(dir: "$projectDir/build/utils/.run-google-java-format")
+            rgjfGit.pull()
+        }
+    }
+}
+
+task pythonIsInstalled(type: Exec) {
+    description "Check that the python executable is installed."
+    executable = "python"
+    args "--version"
+}
+
+task checkFormat(type: Exec, dependsOn: [getCodeFormatScripts, pythonIsInstalled], group: 'Formatting') {
+    description "Check whether the Java source code is properly formatted"
+    def javaFiles = fileTree("$projectDir").matching{
+        include "**/*.java" exclude "testinput/**" exclude "testdata/**" exclude "build/**"
+    } as List
+    def pythonArgs = javaFiles.clone()
+    pythonArgs.add(0, "$projectDir/build/utils/.run-google-java-format/check-google-java-format.py")
+    pythonArgs.add(1, "--aosp") // 4 space indentation
+
+    commandLine "python"
+    args pythonArgs
+    ignoreExitValue true
+
+    doLast {
+        if (execResult.exitValue != 0) {
+            throw new GradleException("Found improper formatting, try running:  ./gradlew reformat")
+        }
+    }
+}
+
+task reformat(type: Exec, dependsOn: [getCodeFormatScripts, pythonIsInstalled], group: 'Formatting') {
+    description "Format the Java source code according to the Google Java Format style"
+    def javaFiles = fileTree("$projectDir").matching{
+        include "src/**/*.java" exclude "testinput/**" exclude "testdata/**" exclude "build/**"
+    } as List
+    def pythonArgs = javaFiles.clone()
+    pythonArgs.add(0, "$projectDir/build/utils/.run-google-java-format/run-google-java-format.py")
+    pythonArgs.add(1, "--aosp") // 4 space indentation
+
+    commandLine "python"
+    args pythonArgs
+}
+
+task installGitHooks(type: Copy) {
+    group=null
+    description "Installs git hooks for pre-commit"
+    from 'scripts/'
+    into '.git/hooks'
+}
+
+/* Always run this task */
+gradle.startParameter.taskNames = [":installGitHooks"] + gradle.startParameter.taskNames
+
+// Commented out because plugins section is commented out
+/* Configuration for formatting */
+/*
+googleJavaFormat {
+    // toolVersion '1.3'
+    options style: 'AOSP'
+}
+tasks.googleJavaFormat {
+    group 'Formatting'
+    description = "Reformat Java source code with Google-Java-format"
+    exclude 'testing'
+    exclude 'testdata'
+    exclude 'annotated'
+    exclude 'worked-benchmarks'
+}
+tasks.verifyGoogleJavaFormat {
+    group 'Formatting'
+    description = "Check Java source code is in Google-Java-format"
+    exclude 'testing'
+    exclude 'testdata'
+    exclude 'annotated'
+    exclude 'worked-benchmarks'
+}
+*/
