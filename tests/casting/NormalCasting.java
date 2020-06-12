@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 
-import read.qual.UnsafeRead;
-
 public class NormalCasting {
     @SuppressWarnings("unused")
     public void method(int foo) {
@@ -20,13 +18,13 @@ public class NormalCasting {
     }
 
     @SuppressWarnings("unused")
-    public void readMethod(@UnsafeRead int inbuff, int unkownInt) throws IOException {
-        char unknownSafetyChar_1 = (char) (inbuff + 1); // Should cast up to UnknownSafety, OK
-        char unknownSafetyChar_2 = (char) (inbuff + inbuff); // Should cast up to UnknownSafety, OK
-        char unknownSafetyChar_3 = (char) (inbuff + unkownInt); // Should cast up to UnknownSafety, OK
+    public void readMethod(int inbuff, int unkownInt) throws IOException {
+        char unknownSafetyChar_1 = (char) (inbuff + 1); 
+        char unknownSafetyChar_2 = (char) (inbuff + inbuff);
+        char unknownSafetyChar_3 = (char) (inbuff + unkownInt);
 
-        byte unknownSafetyByte_1 = (byte) (inbuff + 1); // Should cast up to UnknownSafety, OK
-        byte unknownSafetyByte_2 = (byte) (inbuff + inbuff); // Should cast up to UnknownSafety, OK
-        byte unknownSafetyByte_3 = (byte) (inbuff + unkownInt); // Should cast up to UnknownSafety, OK
+        byte unknownSafetyByte_1 = (byte) (inbuff + 1);
+        byte unknownSafetyByte_2 = (byte) (inbuff + inbuff);
+        byte unknownSafetyByte_3 = (byte) (inbuff + unkownInt);
     }
 }

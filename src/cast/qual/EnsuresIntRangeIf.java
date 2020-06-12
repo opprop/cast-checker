@@ -5,14 +5,13 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
 import org.checkerframework.common.value.qual.IntRange;
 import org.checkerframework.framework.qual.ConditionalPostconditionAnnotation;
 import org.checkerframework.framework.qual.InheritedAnnotation;
 import org.checkerframework.framework.qual.QualifierArgument;
 
 /**
- * Indicates that the given expressions are within the specified integral range, if the method 
+ * Indicates that the given expressions are within the specified integral range, if the method
  * returns the given result (either true or false).
  *
  * <p>Here are ways this conditional postcondition annotation can be used:
@@ -23,7 +22,7 @@ import org.checkerframework.framework.qual.QualifierArgument;
  * <pre>{@code   @EnsuresIntRangeIf(expression="#1", result=true, from=0, to=255)
  *   public boolean equals(@IntRange(from=0, to=255) Object obj) { ... }}</pre>
  *
- * because, if {@code equals} returns true, then the first (#1) argument to {@code equals} is within 
+ * because, if {@code equals} returns true, then the first (#1) argument to {@code equals} is within
  * specified range.
  *
  * <p><b>Fields:</b> The value expressions can refer to fields, even private ones. For example:
@@ -46,7 +45,7 @@ import org.checkerframework.framework.qual.QualifierArgument;
  * that client code performs needed checks in the right order, even if the client code cannot
  * directly affect the field.
  *
- * You can write multiple {@code @EnsuresIntRangeIf} annotations on a single method:
+ * <p>You can write multiple {@code @EnsuresIntRangeIf} annotations on a single method:
  *
  * <pre><code>
  * &nbsp;   @EnsuresIntRangeIf(expression="outputFile", result=true, from=0, to=255)
@@ -73,11 +72,11 @@ public @interface EnsuresIntRangeIf {
 
     /** The return value of the method that needs to hold for the postcondition to hold. */
     boolean result();
-    
+
     /** Smallest value in the range, inclusive. */
     @QualifierArgument("from")
     long from() default Long.MIN_VALUE;
-    
+
     /** Largest value in the range, inclusive. */
     @QualifierArgument("to")
     long to() default Long.MAX_VALUE;
