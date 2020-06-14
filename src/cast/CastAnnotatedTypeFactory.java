@@ -1,8 +1,13 @@
 package cast;
 
 import com.sun.source.tree.BinaryTree;
+import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.NewArrayTree;
 import com.sun.source.tree.TypeCastTree;
+import com.sun.source.tree.VariableTree;
+import com.sun.source.tree.Tree.Kind;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -10,6 +15,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.Element;
 import javax.lang.model.type.TypeMirror;
 import org.checkerframework.common.basetype.BaseTypeChecker;
 import org.checkerframework.common.value.ValueAnnotatedTypeFactory;
@@ -26,6 +32,7 @@ import org.checkerframework.framework.flow.CFValue;
 import org.checkerframework.framework.type.AnnotatedTypeFactory;
 import org.checkerframework.framework.type.AnnotatedTypeMirror;
 import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedExecutableType;
+import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedPrimitiveType;
 import org.checkerframework.framework.type.treeannotator.ListTreeAnnotator;
 import org.checkerframework.framework.type.treeannotator.LiteralTreeAnnotator;
 import org.checkerframework.framework.type.treeannotator.PropagationTreeAnnotator;
@@ -34,6 +41,7 @@ import org.checkerframework.framework.type.typeannotator.DefaultForTypeAnnotator
 import org.checkerframework.framework.type.typeannotator.ListTypeAnnotator;
 import org.checkerframework.framework.type.typeannotator.TypeAnnotator;
 import org.checkerframework.javacutil.AnnotationUtils;
+import org.checkerframework.javacutil.TreeUtils;
 
 public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
 
@@ -54,7 +62,6 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
     protected TypeAnnotator createTypeAnnotator() {
         return new ListTypeAnnotator(
                 new CastTypeAnnotator(this),
-                new CastDefaultForTypeAnnotator(this),
                 super.createTypeAnnotator());
     }
 
@@ -102,7 +109,7 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
     //    	TypeKind[] int_type = {TypeKind.INT};
     //    	defs.addCheckedCodeDefaults(anno, useLocation, int_type);
     //
-    //        super.addCheckedCodeDefaults(defs);
+    //      super.addCheckedCodeDefaults(defs);
     //    }
     //
     //    @Override
@@ -126,29 +133,8 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
     //    	TypeKind[] int_type = {TypeKind.INT};
     //    	defs.addUncheckedCodeDefaults(anno, useLocation, int_type);
     //
-    //        super.addUncheckedCodeDefaults(defs);
+    //      super.addUncheckedCodeDefaults(defs);
     //    }
-
-    private class CastDefaultForTypeAnnotator extends DefaultForTypeAnnotator {
-
-        public CastDefaultForTypeAnnotator(AnnotatedTypeFactory arg0) {
-            super(arg0);
-
-            //	    	AnnotationMirror anno;
-            //
-            //	    	anno = createIntRangeAnnotation(Range.BYTE_EVERYTHING);
-            //	    	addTypeKind(TypeKind.BYTE, anno);
-            //
-            //	    	anno = createIntRangeAnnotation(Range.CHAR_EVERYTHING);
-            //	    	addTypeKind(TypeKind.CHAR, anno);
-            //
-            //	    	anno = createIntRangeAnnotation(Range.SHORT_EVERYTHING);
-            //	    	addTypeKind(TypeKind.SHORT, anno);
-            //
-            //	    	anno = createIntRangeAnnotation(Range.INT_EVERYTHING);
-            //	    	addTypeKind(TypeKind.INT, anno);
-        }
-    }
 
     /**
      * Performs pre-processing on annotations written by users, replacing illegal annotations by
@@ -183,74 +169,35 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
 
             return super.visitExecutable(t, p);
         }
+    }
 
-        //        @Override
-        //        public Void visitExecutable(AnnotatedExecutableType t, Void p) {
-        //			List<AnnotatedTypeMirror> paramTypes = t.getParameterTypes();
-        //			for (AnnotatedTypeMirror paramType : paramTypes) {
-        //				if (paramType.getKind() == TypeKind.mapTypeKind(TypeKind.ARRAY)) {
-        //					AnnotatedTypeMirror compType = ((AnnotatedArrayType)paramType).getComponentType();
-        //					AnnotationMirror anno = createIntRangeAnnotations(compType);
-        //		        	if (anno != null) {
-        //		        		compType.addMissingAnnotations(Collections.singleton(anno));
-        //					}
-        //		        	scan(((AnnotatedArrayType)paramType).getComponentType(), p);
-        //		        	continue;
-        //				}
-        //
-        //				AnnotationMirror anno = createIntRangeAnnotations(paramType);
-        //				if (anno != null) {
-        //					paramType.addMissingAnnotations(Collections.singleton(anno));
-        //				}
-        //			}
-        //
-        //			AnnotatedTypeMirror retType = t.getReturnType();
-        //			if (retType.getKind() == TypeKind.mapTypeKind(TypeKind.ARRAY)) {
-        //				AnnotatedTypeMirror compType = ((AnnotatedArrayType)retType).getComponentType();
-        //				AnnotationMirror anno = createIntRangeAnnotations(compType);
-        //	        	if (anno != null) {
-        //	        		compType.addMissingAnnotations(Collections.singleton(anno));
-        //				}
-        //	        	scan(((AnnotatedArrayType)retType).getComponentType(), p);
-        //	        	return super.visitExecutable(t, p);
-        //			}
-        //
-        //			AnnotationMirror anno = createIntRangeAnnotations(retType);
-        //			if (anno != null) {
-        //				retType.addMissingAnnotations(Collections.singleton(anno));
-        //			}
-        //
-        //            return super.visitExecutable(t, p);
-        //        }
-
-        private AnnotationMirror createIntRangeAnnotations(AnnotatedTypeMirror atm) {
-            AnnotationMirror newAnno;
-            switch (atm.getKind()) {
-                case SHORT:
-                    newAnno = createIntRangeAnnotation(Range.SHORT_EVERYTHING);
-                    break;
-                case BYTE:
-                    newAnno = createIntRangeAnnotation(Range.BYTE_EVERYTHING);
-                    break;
-                case CHAR:
-                    newAnno = createIntRangeAnnotation(Range.CHAR_EVERYTHING);
-                    break;
-                case ARRAY:
-                    newAnno = createIntRangeAnnotation(Range.EVERYTHING);
-                    break;
-                case INT:
-                    newAnno = createIntRangeAnnotation(Range.INT_EVERYTHING);
-                    break;
-                case DOUBLE:
-                case FLOAT:
-                case LONG:
-                    newAnno = createIntRangeAnnotation(Range.EVERYTHING);
-                    break;
-                default:
-                    newAnno = null;
-            }
-            return newAnno;
+    private AnnotationMirror createIntRangeAnnotations(AnnotatedTypeMirror atm) {
+        AnnotationMirror newAnno;
+        switch (atm.getKind()) {
+            case SHORT:
+                newAnno = createIntRangeAnnotation(Range.SHORT_EVERYTHING);
+                break;
+            case BYTE:
+                newAnno = createIntRangeAnnotation(Range.BYTE_EVERYTHING);
+                break;
+            case CHAR:
+                newAnno = createIntRangeAnnotation(Range.CHAR_EVERYTHING);
+                break;
+            case ARRAY:
+                newAnno = createIntRangeAnnotation(Range.EVERYTHING);
+                break;
+            case INT:
+                newAnno = createIntRangeAnnotation(Range.INT_EVERYTHING);
+                break;
+            case DOUBLE:
+            case FLOAT:
+            case LONG:
+                newAnno = createIntRangeAnnotation(Range.EVERYTHING);
+                break;
+            default:
+                newAnno = null;
         }
+        return newAnno;
     }
 
     @Override
@@ -279,6 +226,31 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
         public CastTreeAnnotator(CastAnnotatedTypeFactory factory) {
             super(factory);
         }
+        
+        @Override
+        public Void visitMethod(MethodTree tree, AnnotatedTypeMirror t) {
+        	List<AnnotatedTypeMirror> paramTypes = ((AnnotatedExecutableType)t).getParameterTypes();
+            for (AnnotatedTypeMirror paramType : paramTypes) {
+                AnnotationMirror anno = createIntRangeAnnotations(paramType);
+                if (anno != null) {
+                    paramType.addMissingAnnotations(Collections.singleton(anno));
+                }
+            }
+        	
+        	return super.visitMethod(tree, t);
+        }
+        
+        @Override
+        public Void visitVariable(VariableTree tree, AnnotatedTypeMirror atm) {
+        	if (!TreeUtils.isLocalVariable(tree)) {
+        		AnnotationMirror anno = createIntRangeAnnotations(atm);
+                if (anno != null) {
+                	atm.addMissingAnnotations(Collections.singleton(anno));
+                }
+        	}
+        	
+        	return super.visitVariable(tree, atm);
+        }
 
         @Override
         public Void visitTypeCast(TypeCastTree tree, AnnotatedTypeMirror atm) {
@@ -294,10 +266,10 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
                     if (isIntRange(oldAnno)
                             && (range = getRange(oldAnno)).isWiderThan(MAX_VALUES)) {
                         Range castRange = getRange(oldAnno);
-                        if (newClass == byte.class && isUnsignedByte(castRange)) {
-                            newAnno = createIntRangeAnnotation(unsignedByteRange());
-                        } else if (newClass == short.class && isUnsignedShort(castRange)) {
-                            newAnno = createIntRangeAnnotation(unsignedShortRange());
+                        if (newClass == byte.class && CastRangeUtil.isUnsignedByte(castRange)) {
+                            newAnno = createIntRangeAnnotation(CastRangeUtil.unsignedByteRange());
+                        } else if (newClass == short.class && CastRangeUtil.isUnsignedShort(castRange)) {
+                            newAnno = createIntRangeAnnotation(CastRangeUtil.unsignedShortRange());
                         } else if (newClass == String.class) {
                             newAnno = UNKNOWNVAL;
                         } else if (newClass == Boolean.class || newClass == boolean.class) {
@@ -329,127 +301,103 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
 
             return super.visitTypeCast(tree, atm);
         }
+    }
+    
+    /** Converts a {@code List<A>} to a {@code List<B>}, where A and B are numeric types. */
+    private List<? extends Number> castNumbers(
+            TypeMirror type, List<? extends Number> numbers) {
+        if (numbers == null) {
+            return null;
+        }
 
-        /** Converts a {@code List<A>} to a {@code List<B>}, where A and B are numeric types. */
-        private List<? extends Number> castNumbers(
-                TypeMirror type, List<? extends Number> numbers) {
-            if (numbers == null) {
-                return null;
-            }
+        List<Long> values = new ArrayList<>();
 
-            List<Long> values = new ArrayList<>();
-
-            javax.lang.model.type.TypeKind typeKind = type.getKind();
-            switch (typeKind) {
-                case BYTE:
-                    for (Number l : numbers) {
-                        if (l.longValue() > 255 || l.longValue() < -128) {
-                            values.add((long) l.byteValue());
-                        } else {
-                            values.add(l.longValue());
-                        }
-                    }
-                    return values;
-                case SHORT:
-                    for (Number l : numbers) {
-                        if (l.longValue() > 65535 || l.longValue() < -32768) {
-                            values.add((long) l.shortValue());
-                        } else {
-                            values.add(l.longValue());
-                        }
-                    }
-                    return values;
-                case CHAR:
-                case INT:
-                case LONG:
-                    for (Number l : numbers) {
+        javax.lang.model.type.TypeKind typeKind = type.getKind();
+        switch (typeKind) {
+            case BYTE:
+                for (Number l : numbers) {
+                    if (l.longValue() > 255 || l.longValue() < -128) {
+                        values.add((long) l.byteValue());
+                    } else {
                         values.add(l.longValue());
                     }
-                    return values;
-                default:
-                    throw new UnsupportedOperationException(typeKind.toString());
-            }
-        }
-
-        /**
-         * Returns a constant value annotation with the {@code values}. The class of the annotation
-         * reflects the {@code resultType} given.
-         *
-         * @param resultType used to selected which kind of value annotation is returned
-         * @param values must be a homogeneous list: every element of it has the same class
-         * @return a constant value annotation with the {@code values}
-         */
-        AnnotationMirror createResultingAnnotation(TypeMirror resultType, List<?> values) {
-            if (values == null) {
-                return UNKNOWNVAL;
-            }
-            // For some reason null is included in the list of values,
-            // so remove it so that it does not cause a NPE elsewhere.
-            values.remove(null);
-            if (values.isEmpty()) {
-                return BOTTOMVAL;
-            }
-
-            switch (resultType.getKind()) {
-                case INT:
-                case LONG:
-                case SHORT:
-                case BYTE:
-                    List<Number> numberVals = new ArrayList<>(values.size());
-                    List<Character> characterVals = new ArrayList<>(values.size());
-                    for (Object o : values) {
-                        if (o instanceof Character) {
-                            characterVals.add((Character) o);
-                        } else {
-                            numberVals.add((Number) o);
-                        }
+                }
+                return values;
+            case SHORT:
+                for (Number l : numbers) {
+                    if (l.longValue() > 65535 || l.longValue() < -32768) {
+                        values.add((long) l.shortValue());
+                    } else {
+                        values.add(l.longValue());
                     }
-                    if (numberVals.isEmpty()) {
-                        return createCharAnnotation(characterVals);
+                }
+                return values;
+            case CHAR:
+            case INT:
+            case LONG:
+                for (Number l : numbers) {
+                    values.add(l.longValue());
+                }
+                return values;
+            default:
+                throw new UnsupportedOperationException(typeKind.toString());
+        }
+    }
+
+    /**
+     * Returns a constant value annotation with the {@code values}. The class of the annotation
+     * reflects the {@code resultType} given.
+     *
+     * @param resultType used to selected which kind of value annotation is returned
+     * @param values must be a homogeneous list: every element of it has the same class
+     * @return a constant value annotation with the {@code values}
+     */
+    AnnotationMirror createResultingAnnotation(TypeMirror resultType, List<?> values) {
+        if (values == null) {
+            return UNKNOWNVAL;
+        }
+        // For some reason null is included in the list of values,
+        // so remove it so that it does not cause a NPE elsewhere.
+        values.remove(null);
+        if (values.isEmpty()) {
+            return BOTTOMVAL;
+        }
+
+        switch (resultType.getKind()) {
+            case INT:
+            case LONG:
+            case SHORT:
+            case BYTE:
+                List<Number> numberVals = new ArrayList<>(values.size());
+                List<Character> characterVals = new ArrayList<>(values.size());
+                for (Object o : values) {
+                    if (o instanceof Character) {
+                        characterVals.add((Character) o);
+                    } else {
+                        numberVals.add((Number) o);
                     }
-                    return createNumberAnnotationMirror(new ArrayList<>(numberVals));
-                case CHAR:
-                    List<Character> charVals = new ArrayList<>(values.size());
-                    for (Object o : values) {
-                        if (o instanceof Number) {
-                            charVals.add((char) ((Number) o).intValue());
-                        } else {
-                            charVals.add((char) o);
-                        }
+                }
+                if (numberVals.isEmpty()) {
+                    return createCharAnnotation(characterVals);
+                }
+                return createNumberAnnotationMirror(new ArrayList<>(numberVals));
+            case CHAR:
+                List<Character> charVals = new ArrayList<>(values.size());
+                for (Object o : values) {
+                    if (o instanceof Number) {
+                        charVals.add((char) ((Number) o).intValue());
+                    } else {
+                        charVals.add((char) o);
                     }
-                    return createCharAnnotation(charVals);
-                default:
-                    throw new UnsupportedOperationException("Unexpected kind:" + resultType);
-            }
+                }
+                return createCharAnnotation(charVals);
+            default:
+                throw new UnsupportedOperationException("Unexpected kind:" + resultType);
         }
+    }
 
-        /** Returns true iff the given type is in the domain of the Constant Value Checker. */
-        private boolean handledByValueChecker(AnnotatedTypeMirror type) {
-            return COVERED_CLASS_STRINGS.contains(type.getUnderlyingType().toString());
-        }
-
-        /** Return true if this range contains unsigned part of {@code short} value. */
-        private boolean isUnsignedShort(Range range) {
-            return !range.intersect(Range.create(Short.MAX_VALUE + 1, Short.MAX_VALUE * 2 + 1))
-                            .isNothing()
-                    && !range.contains(Range.SHORT_EVERYTHING);
-        }
-
-        /** Return true if this range contains unsigned part of {@code byte} value. */
-        private boolean isUnsignedByte(Range range) {
-            return !range.intersect(Range.create(Byte.MAX_VALUE + 1, Byte.MAX_VALUE * 2 + 1))
-                            .isNothing()
-                    && !range.contains(Range.BYTE_EVERYTHING);
-        }
-
-        /** A range containing all possible unsigned byte values. */
-        private Range unsignedByteRange() {
-            return Range.create(0, Byte.MAX_VALUE * 2 + 1);
-        }
-
-        /** A range containing all possible unsigned short values. */
-        private Range unsignedShortRange() {
-            return Range.create(0, Short.MAX_VALUE * 2 + 1);
-        }
+    /** Returns true iff the given type is in the domain of the Constant Value Checker. */
+    private boolean handledByValueChecker(AnnotatedTypeMirror type) {
+        return COVERED_CLASS_STRINGS.contains(type.getUnderlyingType().toString());
     }
 }

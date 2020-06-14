@@ -1,6 +1,8 @@
 package cast;
 
+import com.github.javaparser.JavaToken.Kind;
 import com.sun.source.tree.BinaryTree;
+import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.TypeCastTree;
 import java.util.Set;
@@ -38,33 +40,47 @@ public class CastVisitor extends ValueVisitor {
         return new CastAnnotatedTypeFactory(checker);
     }
 
-//    /** Return true if this range contains unsigned part of {@code byte} value. */
-//    private boolean isUnsignedByte(Range range) {
-//        return !range.intersect(Range.create(Byte.MAX_VALUE + 1, Byte.MAX_VALUE * 2 + 1))
-//                        .isNothing()
-//                && !range.contains(Range.BYTE_EVERYTHING);
-//    }
-//
-//    @Override
-//    protected void commonAssignmentCheck(
-//            AnnotatedTypeMirror varType,
-//            AnnotatedTypeMirror valueType,
-//            Tree valueTree,
-//            String errorKey) {
-//
-//        if (varType.getKind() != valueType.getKind()
-//                && valueType.getUnderlyingType().getKind() == TypeKind.BYTE) {
-//            AnnotationMirror valueAnno = valueType.getAnnotationInHierarchy(UNKNOWNVAL);
-//            if (AnnotationUtils.areSameByClass(valueAnno, IntRange.class)) {
-//                Range range = ValueAnnotatedTypeFactory.getRange(valueAnno);
-//                if (isUnsignedByte(range)) {
-//                    checker.reportWarning(valueTree, errorKey, valueType, varType);
-//                }
-//            }
-//        }
-//        super.commonAssignmentCheck(varType, valueType, valueTree, errorKey);
-//    }
-//
+    @Override
+    protected void commonAssignmentCheck(
+            AnnotatedTypeMirror varType,
+            AnnotatedTypeMirror valueType,
+            Tree valueTree,
+            String errorKey) {
+
+    	if (varType.getKind() != valueType.getKind()) {
+    		checkUnsafeWidening(valueTree, varType, valueType);
+    	}
+        super.commonAssignmentCheck(varType, valueType, valueTree, errorKey);
+    }
+    
+    /**
+     * 
+     * @param valueTree
+     * @param varType type of the node to be widened to
+     * @param valueType type of the to be widened node
+     */
+    private void checkUnsafeWidening(Tree valueTree, AnnotatedTypeMirror varType, AnnotatedTypeMirror valueType) {
+    	if (valueType.getUnderlyingType().getKind() == TypeKind.BYTE) {
+            AnnotationMirror valueAnno = valueType.getAnnotationInHierarchy(UNKNOWNVAL);
+            if (isIntValRange(valueAnno)) {
+                Range range = ValueAnnotatedTypeFactory.getRange(valueAnno);
+                if (CastRangeUtil.isUnsignedByte(range)) {
+                    checker.reportWarning(valueTree, "widening.unsafe", valueType, varType);
+                }
+            }
+        }
+        
+        if (valueType.getUnderlyingType().getKind() == TypeKind.SHORT) {
+            AnnotationMirror valueAnno = valueType.getAnnotationInHierarchy(UNKNOWNVAL);
+            if (isIntValRange(valueAnno)) {
+                Range range = ValueAnnotatedTypeFactory.getRange(valueAnno);
+                if (CastRangeUtil.isUnsignedShort(range)) {
+                    checker.reportWarning(valueTree, "widening.unsafe", valueType, varType);
+                }
+            }
+        }
+    }
+
     @Override
     public Void visitTypeCast(TypeCastTree node, Void p) {        
         AnnotatedTypeMirror castType = atypeFactory.getAnnotatedType(node);
@@ -100,19 +116,71 @@ public class CastVisitor extends ValueVisitor {
     	return false;
     }
     
-//
-//    @Override
-//    public Void visitBinary(BinaryTree node, Void p) {
-//        Set<Node> nodes = atypeFactory.getNodesForTree(node);
-//        for (Node n : nodes) {
-//            if (n instanceof BinaryOperationNode) visitBinaryOperation((BinaryOperationNode) n);
-//            else if (n instanceof WideningConversionNode) {
-//                checkUnsafeWidening((WideningConversionNode) n, node);
-//            }
-//        }
-//        return super.visitBinary(node, p);
-//    }
-//
+
+    @Override
+    public Void visitBinary(BinaryTree node, Void p) {
+    	ExpressionTree left = node.getLeftOperand();
+    	ExpressionTree right = node.getRightOperand();
+    	
+    	AnnotatedTypeMirror leftType = atypeFactory.getAnnotatedType(left);
+        AnnotatedTypeMirror rightType = atypeFactory.getAnnotatedType(right);
+        
+    	if (node.getKind() == Tree.Kind.AND) {
+    		if (leftType.getUnderlyingType().getKind() == TypeKind.BYTE && right.toString().equals("255")
+    				|| rightType.getUnderlyingType().getKind() == TypeKind.BYTE && left.toString().equals("255")) {
+    			return super.visitBinary(node, p);
+    		}
+    	}
+    	
+    	if (node.getKind() == Tree.Kind.AND) {
+    		if (leftType.getUnderlyingType().getKind() == TypeKind.SHORT && right.toString().equals("65535")
+    				|| rightType.getUnderlyingType().getKind() == TypeKind.SHORT && left.toString().equals("65535")) {
+    			return super.visitBinary(node, p);
+    		}
+    	}
+    	
+    	AnnotationMirror leftAnno = leftType.getAnnotationInHierarchy(UNKNOWNVAL);
+        AnnotationMirror rightAnno = rightType.getAnnotationInHierarchy(UNKNOWNVAL);
+        
+    	if (leftType.getUnderlyingType().getKind() == TypeKind.BYTE || leftType.getUnderlyingType().getKind() == TypeKind.SHORT) {
+    		checkUnsafeWidening(node, rightType, leftType);
+    		return super.visitBinary(node, p);
+		}
+    	
+    	if (rightType.getUnderlyingType().getKind() == TypeKind.BYTE || rightType.getUnderlyingType().getKind() == TypeKind.SHORT) {
+    		checkUnsafeWidening(node, leftType, rightType);
+    		return super.visitBinary(node, p);
+		}
+    	
+        if (leftType.getUnderlyingType().getKind() == TypeKind.BYTE && rightType.getUnderlyingType().getKind() == TypeKind.BYTE) {
+        	if ((CastRangeUtil.isSignedByte(ValueAnnotatedTypeFactory.getRange(leftAnno)) 
+        			&& CastRangeUtil.isUnsignedByte(ValueAnnotatedTypeFactory.getRange(rightAnno)))
+        		|| (CastRangeUtil.isUnsignedByte(ValueAnnotatedTypeFactory.getRange(rightAnno))
+        			&& CastRangeUtil.isSignedByte(ValueAnnotatedTypeFactory.getRange(leftAnno)))) {
+        		checker.reportError(node,
+                        "comparison.unit.mismatch",
+                        leftAnno,
+                        rightAnno);
+        	}
+        	return super.visitBinary(node, p);
+        }
+        
+        if (leftType.getUnderlyingType().getKind() == TypeKind.SHORT && rightType.getUnderlyingType().getKind() == TypeKind.SHORT) {
+        	if ((CastRangeUtil.isSignedShort(ValueAnnotatedTypeFactory.getRange(leftAnno)) 
+        			&& CastRangeUtil.isUnsignedShort(ValueAnnotatedTypeFactory.getRange(rightAnno)))
+        		|| (CastRangeUtil.isUnsignedShort(ValueAnnotatedTypeFactory.getRange(rightAnno))
+        			&& CastRangeUtil.isSignedShort(ValueAnnotatedTypeFactory.getRange(leftAnno)))) {
+        		checker.reportError(node,
+                        "comparison.unit.mismatch",
+                        leftAnno,
+                        rightAnno);
+        	}
+        	return super.visitBinary(node, p);
+        }
+    	
+        return super.visitBinary(node, p);
+    }
+
 //    private void visitBinaryOperation(BinaryOperationNode node) {
 //        Node leftNode = node.getLeftOperand();
 //        Node rightNode = node.getRightOperand();

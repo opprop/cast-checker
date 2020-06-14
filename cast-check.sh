@@ -30,4 +30,4 @@ echo $java_files
 # has cast checker invocation:
 # -Acfgviz=org.checkerframework.dataflow.cfg.DOTCFGVisualizer,verbose,outdir=dotfile
 # -AuseDefaultsForUncheckedCode=bytecode
-$JAVAC -processor cast.CastChecker -cp $CAST_CHECKER/bin:$CAST_CHECKER/lib $java_files 
+$JAVAC -processor cast.CastChecker -cp $CAST_CHECKER/build/libs/cast-checker.jar:$CAST_CHECKER/lib $java_files 

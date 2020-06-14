@@ -5,7 +5,7 @@ import org.checkerframework.common.value.ValueChecker;
 import org.checkerframework.framework.qual.StubFiles;
 
 @StubFiles({
-    "jdk.astub",
+    "input.astub",
     "output.astub",
 })
 public class CastChecker extends ValueChecker {
