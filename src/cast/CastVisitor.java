@@ -48,7 +48,7 @@ public class CastVisitor extends ValueVisitor {
             String errorKey) {
 
     	if (varType.getKind() != valueType.getKind()) {
-    		checkUnsafeWidening(valueTree, varType, valueType);
+    		checkUnsafeWidening(valueTree, valueType);
     	}
         super.commonAssignmentCheck(varType, valueType, valueTree, errorKey);
     }
@@ -56,16 +56,15 @@ public class CastVisitor extends ValueVisitor {
     /**
      * 
      * @param valueTree
-     * @param varType type of the node to be widened to
      * @param valueType type of the to be widened node
      */
-    private void checkUnsafeWidening(Tree valueTree, AnnotatedTypeMirror varType, AnnotatedTypeMirror valueType) {
+    private void checkUnsafeWidening(Tree valueTree, AnnotatedTypeMirror valueType) {
     	if (valueType.getUnderlyingType().getKind() == TypeKind.BYTE) {
             AnnotationMirror valueAnno = valueType.getAnnotationInHierarchy(UNKNOWNVAL);
             if (isIntValRange(valueAnno)) {
                 Range range = ValueAnnotatedTypeFactory.getRange(valueAnno);
                 if (CastRangeUtil.isUnsignedByte(range)) {
-                    checker.reportWarning(valueTree, "widening.unsafe", valueType, varType);
+                    checker.reportWarning(valueTree, "widening.unsafe", valueType, valueType);
                 }
             }
         }
@@ -75,7 +74,7 @@ public class CastVisitor extends ValueVisitor {
             if (isIntValRange(valueAnno)) {
                 Range range = ValueAnnotatedTypeFactory.getRange(valueAnno);
                 if (CastRangeUtil.isUnsignedShort(range)) {
-                    checker.reportWarning(valueTree, "widening.unsafe", valueType, varType);
+                    checker.reportWarning(valueTree, "widening.unsafe", valueType, valueType);
                 }
             }
         }
@@ -124,98 +123,63 @@ public class CastVisitor extends ValueVisitor {
     	
     	AnnotatedTypeMirror leftType = atypeFactory.getAnnotatedType(left);
         AnnotatedTypeMirror rightType = atypeFactory.getAnnotatedType(right);
-        
-    	if (node.getKind() == Tree.Kind.AND) {
-    		if (leftType.getUnderlyingType().getKind() == TypeKind.BYTE && right.toString().equals("255")
-    				|| rightType.getUnderlyingType().getKind() == TypeKind.BYTE && left.toString().equals("255")) {
-    			return super.visitBinary(node, p);
-    		}
-    	}
-    	
-    	if (node.getKind() == Tree.Kind.AND) {
-    		if (leftType.getUnderlyingType().getKind() == TypeKind.SHORT && right.toString().equals("65535")
-    				|| rightType.getUnderlyingType().getKind() == TypeKind.SHORT && left.toString().equals("65535")) {
-    			return super.visitBinary(node, p);
-    		}
-    	}
-    	
     	AnnotationMirror leftAnno = leftType.getAnnotationInHierarchy(UNKNOWNVAL);
         AnnotationMirror rightAnno = rightType.getAnnotationInHierarchy(UNKNOWNVAL);
         
-    	if (leftType.getUnderlyingType().getKind() == TypeKind.BYTE || leftType.getUnderlyingType().getKind() == TypeKind.SHORT) {
-    		checkUnsafeWidening(node, rightType, leftType);
-    		return super.visitBinary(node, p);
-		}
-    	
-    	if (rightType.getUnderlyingType().getKind() == TypeKind.BYTE || rightType.getUnderlyingType().getKind() == TypeKind.SHORT) {
-    		checkUnsafeWidening(node, leftType, rightType);
-    		return super.visitBinary(node, p);
-		}
-    	
-        if (leftType.getUnderlyingType().getKind() == TypeKind.BYTE && rightType.getUnderlyingType().getKind() == TypeKind.BYTE) {
-        	if ((CastRangeUtil.isSignedByte(ValueAnnotatedTypeFactory.getRange(leftAnno)) 
-        			&& CastRangeUtil.isUnsignedByte(ValueAnnotatedTypeFactory.getRange(rightAnno)))
-        		|| (CastRangeUtil.isUnsignedByte(ValueAnnotatedTypeFactory.getRange(rightAnno))
-        			&& CastRangeUtil.isSignedByte(ValueAnnotatedTypeFactory.getRange(leftAnno)))) {
-        		checker.reportError(node,
-                        "comparison.unit.mismatch",
-                        leftAnno,
-                        rightAnno);
-        	}
-        	return super.visitBinary(node, p);
+        switch (node.getKind()) {
+	        case AND:
+	        	if (leftType.getUnderlyingType().getKind() == TypeKind.BYTE && right.toString().equals("255")
+	        			|| rightType.getUnderlyingType().getKind() == TypeKind.BYTE && left.toString().equals("255")) {
+	        		break;
+	        	}
+	        	if (leftType.getUnderlyingType().getKind() == TypeKind.SHORT && right.toString().equals("65535")
+	    				|| rightType.getUnderlyingType().getKind() == TypeKind.SHORT && left.toString().equals("65535")) {
+	    			break;
+	    		}
+	        case OR:
+	        case XOR:
+	        case PLUS:
+	        case MINUS:
+	        case MULTIPLY:
+	        case DIVIDE:
+	        case REMAINDER:
+	        	if (leftType.getUnderlyingType().getKind() == TypeKind.BYTE && rightType.getUnderlyingType().getKind() == TypeKind.BYTE) {
+	            	if ((CastRangeUtil.isSignedByte(ValueAnnotatedTypeFactory.getRange(leftAnno)) 
+	            			&& CastRangeUtil.isUnsignedByte(ValueAnnotatedTypeFactory.getRange(rightAnno)))
+	            		|| (CastRangeUtil.isUnsignedByte(ValueAnnotatedTypeFactory.getRange(leftAnno))
+	            			&& CastRangeUtil.isSignedByte(ValueAnnotatedTypeFactory.getRange(rightAnno)))) {
+	            		checker.reportError(node,
+	                            "binary.signedness.mismatch",
+	                            leftAnno,
+	                            rightAnno);
+	                	break;
+	            	}
+	            }
+	            
+	            if (leftType.getUnderlyingType().getKind() == TypeKind.SHORT && rightType.getUnderlyingType().getKind() == TypeKind.SHORT) {
+	            	if ((CastRangeUtil.isSignedShort(ValueAnnotatedTypeFactory.getRange(leftAnno)) 
+	            			&& CastRangeUtil.isUnsignedShort(ValueAnnotatedTypeFactory.getRange(rightAnno)))
+	            		|| (CastRangeUtil.isUnsignedShort(ValueAnnotatedTypeFactory.getRange(leftAnno))
+	            			&& CastRangeUtil.isSignedShort(ValueAnnotatedTypeFactory.getRange(rightAnno)))) {
+	            		checker.reportError(node,
+	                            "binary.signedness.mismatch",
+	                            leftAnno,
+	                            rightAnno);
+	                	break;
+	            	}
+	            }
+	        		            
+	        	if (leftType.getUnderlyingType().getKind() == TypeKind.BYTE || leftType.getUnderlyingType().getKind() == TypeKind.SHORT) {
+	        		checkUnsafeWidening(left, leftType);
+	    		}
+	        	if (rightType.getUnderlyingType().getKind() == TypeKind.BYTE || rightType.getUnderlyingType().getKind() == TypeKind.SHORT) {
+	        		checkUnsafeWidening(right, rightType);
+	    		}
+	        	break;
+	        default:
+	        	break;
         }
         
-        if (leftType.getUnderlyingType().getKind() == TypeKind.SHORT && rightType.getUnderlyingType().getKind() == TypeKind.SHORT) {
-        	if ((CastRangeUtil.isSignedShort(ValueAnnotatedTypeFactory.getRange(leftAnno)) 
-        			&& CastRangeUtil.isUnsignedShort(ValueAnnotatedTypeFactory.getRange(rightAnno)))
-        		|| (CastRangeUtil.isUnsignedShort(ValueAnnotatedTypeFactory.getRange(rightAnno))
-        			&& CastRangeUtil.isSignedShort(ValueAnnotatedTypeFactory.getRange(leftAnno)))) {
-        		checker.reportError(node,
-                        "comparison.unit.mismatch",
-                        leftAnno,
-                        rightAnno);
-        	}
-        	return super.visitBinary(node, p);
-        }
-    	
         return super.visitBinary(node, p);
     }
-
-//    private void visitBinaryOperation(BinaryOperationNode node) {
-//        Node leftNode = node.getLeftOperand();
-//        Node rightNode = node.getRightOperand();
-//
-//        if (leftNode instanceof WideningConversionNode
-//                && (!(node instanceof BitwiseAndNode) || !rightNode.toString().equals("255"))) {
-//            checkUnsafeWidening((WideningConversionNode) leftNode, node.getTree());
-//        }
-//        if (rightNode instanceof WideningConversionNode
-//                && (!(node instanceof BitwiseAndNode) || !leftNode.toString().equals("255"))) {
-//            checkUnsafeWidening((WideningConversionNode) rightNode, node.getTree());
-//        }
-//    }
-//
-//    private void checkUnsafeWidening(WideningConversionNode node, Tree target) {
-//        if (isUnsighedByteWideningConversion(node)) {
-//            AnnotatedTypeMirror targetType = atypeFactory.getAnnotatedType(target);
-//            AnnotatedTypeMirror exprType = atypeFactory.getAnnotatedType(node.getTree());
-//            checker.reportError(target, "cast.unsafe", exprType, targetType);
-//        }
-//    }
-//
-//    private boolean isUnsighedByteWideningConversion(WideningConversionNode node) {
-//        if (node.getOperand().getType().getKind() == TypeKind.BYTE) {
-//            CFValue operandValue = atypeFactory.getInferredValueFor(node.getOperand().getTree());
-//            Set<AnnotationMirror> annos = operandValue.getAnnotations();
-//            for (AnnotationMirror anno : annos) {
-//                if (AnnotationUtils.areSameByClass(anno, IntRange.class)) {
-//                    Range annoRange = ValueAnnotatedTypeFactory.getRange(anno);
-//                    if (isUnsignedByte(annoRange)) {
-//                        return true;
-//                    }
-//                }
-//            }
-//        }
-//        return false;
-//    }
 }

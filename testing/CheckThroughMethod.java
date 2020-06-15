@@ -6,12 +6,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 
+import org.checkerframework.common.value.qual.IntRange;
 import cast.qual.EnsuresIntRangeIf;
 
 public class CheckThroughMethod {
 
-    @EnsuresIntRangeIf(expression="#1", result=true, from=0)
-    public boolean isSafe(int inbuff) {
+    @EnsuresIntRangeIf(expression="#1", result=true, from=0, to=255)
+    public boolean isSafe(@IntRange(from=-1, to=255) int inbuff) {
         return inbuff != -1;
     }
 
@@ -27,7 +28,6 @@ public class CheckThroughMethod {
                 break;
             }
             data = (byte) inbuff; // OK
-            charData = (char) inbuff; // OK
         }
     }
 

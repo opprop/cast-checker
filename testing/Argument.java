@@ -36,7 +36,6 @@ public class Argument {
         byte[] data_array = {signed};
         acceptByteArray(data_array);    // OK
 
-        //:: error: (argument.type.incompatible)
         byte unsigned = returnUnsighByte();
         byte[] unsigned_array = {unsigned};
         //:: error: (argument.type.incompatible)

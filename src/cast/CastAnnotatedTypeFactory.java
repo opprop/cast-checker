@@ -1,5 +1,7 @@
 package cast;
 
+import com.sun.source.tree.ArrayAccessTree;
+import com.sun.source.tree.ArrayTypeTree;
 import com.sun.source.tree.BinaryTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
@@ -31,6 +33,7 @@ import org.checkerframework.framework.flow.CFTransfer;
 import org.checkerframework.framework.flow.CFValue;
 import org.checkerframework.framework.type.AnnotatedTypeFactory;
 import org.checkerframework.framework.type.AnnotatedTypeMirror;
+import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedArrayType;
 import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedExecutableType;
 import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedPrimitiveType;
 import org.checkerframework.framework.type.treeannotator.ListTreeAnnotator;
@@ -169,6 +172,16 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
 
             return super.visitExecutable(t, p);
         }
+        
+        @Override
+        public Void visitArray(AnnotatedArrayType t, Void p) {
+        	AnnotatedTypeMirror comp = t.getComponentType();
+        	AnnotationMirror anno = createIntRangeAnnotations(comp);
+        	if (anno != null) {
+        		comp.addMissingAnnotations(Collections.singleton(anno));
+			}
+        	return super.visitArray(t, p);
+        }
     }
 
     private AnnotationMirror createIntRangeAnnotations(AnnotatedTypeMirror atm) {
@@ -228,19 +241,6 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
         }
         
         @Override
-        public Void visitMethod(MethodTree tree, AnnotatedTypeMirror t) {
-        	List<AnnotatedTypeMirror> paramTypes = ((AnnotatedExecutableType)t).getParameterTypes();
-            for (AnnotatedTypeMirror paramType : paramTypes) {
-                AnnotationMirror anno = createIntRangeAnnotations(paramType);
-                if (anno != null) {
-                    paramType.addMissingAnnotations(Collections.singleton(anno));
-                }
-            }
-        	
-        	return super.visitMethod(tree, t);
-        }
-        
-        @Override
         public Void visitVariable(VariableTree tree, AnnotatedTypeMirror atm) {
         	if (!TreeUtils.isLocalVariable(tree)) {
         		AnnotationMirror anno = createIntRangeAnnotations(atm);
@@ -248,7 +248,6 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
                 	atm.addMissingAnnotations(Collections.singleton(anno));
                 }
         	}
-        	
         	return super.visitVariable(tree, atm);
         }
 
