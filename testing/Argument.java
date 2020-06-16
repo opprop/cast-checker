@@ -19,17 +19,15 @@ public class Argument {
     public void acceptCharDoubleArray(char[][] value) {}
 
     public void testPassingArgument(@IntRange(from=0, to=255) int value, 
-                                    byte byte_val, 
+                                    byte byte_val,
                                     char char_val, 
                                     byte[] byte_arr, 
                                     char[] char_arr, 
                                     byte[][] byte_double_arr, 
                                     char[][] char_double_arr) {
         byte data = (byte) value;
-
         //:: error: (argument.type.incompatible)
-        acceptSignedByte(data);
-
+        acceptSignedByte(data);]
         acceptUnsignedByte(data);   // OK
 
         byte signed = returnSignedByte();

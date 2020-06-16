@@ -51,8 +51,8 @@ sourceSets {
         }
 
         resources {
-            srcDirs = ["src"]
-            include "**/*.astub"
+            srcDirs += ['src']
+            exclude "**/*.java"
         }
     }
 

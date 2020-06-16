@@ -1,15 +1,7 @@
 package cast;
 
-import com.sun.source.tree.ArrayAccessTree;
-import com.sun.source.tree.ArrayTypeTree;
-import com.sun.source.tree.BinaryTree;
-import com.sun.source.tree.MethodInvocationTree;
-import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.NewArrayTree;
 import com.sun.source.tree.TypeCastTree;
-import com.sun.source.tree.VariableTree;
-import com.sun.source.tree.Tree.Kind;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -18,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.type.TypeMirror;
 import org.checkerframework.common.basetype.BaseTypeChecker;
 import org.checkerframework.common.value.ValueAnnotatedTypeFactory;
@@ -31,7 +24,6 @@ import org.checkerframework.framework.flow.CFAbstractAnalysis;
 import org.checkerframework.framework.flow.CFStore;
 import org.checkerframework.framework.flow.CFTransfer;
 import org.checkerframework.framework.flow.CFValue;
-import org.checkerframework.framework.type.AnnotatedTypeFactory;
 import org.checkerframework.framework.type.AnnotatedTypeMirror;
 import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedArrayType;
 import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedExecutableType;
@@ -40,11 +32,9 @@ import org.checkerframework.framework.type.treeannotator.ListTreeAnnotator;
 import org.checkerframework.framework.type.treeannotator.LiteralTreeAnnotator;
 import org.checkerframework.framework.type.treeannotator.PropagationTreeAnnotator;
 import org.checkerframework.framework.type.treeannotator.TreeAnnotator;
-import org.checkerframework.framework.type.typeannotator.DefaultForTypeAnnotator;
 import org.checkerframework.framework.type.typeannotator.ListTypeAnnotator;
 import org.checkerframework.framework.type.typeannotator.TypeAnnotator;
 import org.checkerframework.javacutil.AnnotationUtils;
-import org.checkerframework.javacutil.TreeUtils;
 
 public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
 
@@ -63,9 +53,7 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
 
     @Override
     protected TypeAnnotator createTypeAnnotator() {
-        return new ListTypeAnnotator(
-                new CastTypeAnnotator(this),
-                super.createTypeAnnotator());
+        return new ListTypeAnnotator(new CastTypeAnnotator(this), super.createTypeAnnotator());
     }
 
     protected static final Set<String> COVERED_CLASS_STRINGS =
@@ -90,54 +78,6 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
                                     "short",
                                     "java.lang.Short",
                                     "char[]")));
-
-    //    @Override
-    //    protected void addCheckedCodeDefaults(QualifierDefaults defs) {
-    //		TypeUseLocation[] useLocation = {TypeUseLocation.PARAMETER, TypeUseLocation.FIELD};
-    //    	AnnotationMirror anno;
-    //
-    //    	anno = createIntRangeAnnotation(Range.BYTE_EVERYTHING);
-    //    	TypeKind[] byte_type = {TypeKind.BYTE};
-    //    	defs.addCheckedCodeDefaults(anno, useLocation, byte_type);
-    //
-    //    	anno = createIntRangeAnnotation(Range.CHAR_EVERYTHING);
-    //    	TypeKind[] char_type = {TypeKind.CHAR};
-    //    	defs.addCheckedCodeDefaults(anno, useLocation, char_type);
-    //
-    //    	anno = createIntRangeAnnotation(Range.SHORT_EVERYTHING);
-    //    	TypeKind[] short_type = {TypeKind.SHORT};
-    //    	defs.addCheckedCodeDefaults(anno, useLocation, short_type);
-    //
-    //    	anno = createIntRangeAnnotation(Range.INT_EVERYTHING);
-    //    	TypeKind[] int_type = {TypeKind.INT};
-    //    	defs.addCheckedCodeDefaults(anno, useLocation, int_type);
-    //
-    //      super.addCheckedCodeDefaults(defs);
-    //    }
-    //
-    //    @Override
-    //    protected void addUncheckedCodeDefaults(QualifierDefaults defs) {
-    //    	TypeUseLocation[] useLocation = {TypeUseLocation.PARAMETER, TypeUseLocation.FIELD};
-    //    	AnnotationMirror anno;
-    //
-    //    	anno = createIntRangeAnnotation(Range.BYTE_EVERYTHING);
-    //    	TypeKind[] byte_type = {TypeKind.BYTE};
-    //    	defs.addUncheckedCodeDefaults(anno, useLocation, byte_type);
-    //
-    //    	anno = createIntRangeAnnotation(Range.CHAR_EVERYTHING);
-    //    	TypeKind[] char_type = {TypeKind.CHAR};
-    //    	defs.addUncheckedCodeDefaults(anno, useLocation, char_type);
-    //
-    //    	anno = createIntRangeAnnotation(Range.SHORT_EVERYTHING);
-    //    	TypeKind[] short_type = {TypeKind.SHORT};
-    //    	defs.addUncheckedCodeDefaults(anno, useLocation, short_type);
-    //
-    //    	anno = createIntRangeAnnotation(Range.INT_EVERYTHING);
-    //    	TypeKind[] int_type = {TypeKind.INT};
-    //    	defs.addUncheckedCodeDefaults(anno, useLocation, int_type);
-    //
-    //      super.addUncheckedCodeDefaults(defs);
-    //    }
 
     /**
      * Performs pre-processing on annotations written by users, replacing illegal annotations by
@@ -172,15 +112,45 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
 
             return super.visitExecutable(t, p);
         }
-        
+    }
+
+    @Override
+    public void addComputedTypeAnnotations(Element elt, AnnotatedTypeMirror type) {
+        if (elt.getKind() == ElementKind.FIELD || elt.getKind() == ElementKind.PARAMETER) {
+            CastTreeTypeAnnotator visitor = new CastTreeTypeAnnotator(this);
+            visitor.visit(type);
+        }
+        super.addComputedTypeAnnotations(elt, type);
+    }
+
+    private class CastTreeTypeAnnotator extends ValueTypeAnnotator {
+
+        private CastTreeTypeAnnotator(ValueAnnotatedTypeFactory atypeFactory) {
+            super(atypeFactory);
+        }
+
+        @Override
+        protected Void scan(AnnotatedTypeMirror type, Void aVoid) {
+            return super.scan(type, aVoid);
+        }
+
         @Override
         public Void visitArray(AnnotatedArrayType t, Void p) {
-        	AnnotatedTypeMirror comp = t.getComponentType();
-        	AnnotationMirror anno = createIntRangeAnnotations(comp);
-        	if (anno != null) {
-        		comp.addMissingAnnotations(Collections.singleton(anno));
-			}
-        	return super.visitArray(t, p);
+            AnnotatedTypeMirror comp = t.getComponentType();
+            AnnotationMirror anno = createIntRangeAnnotations(comp);
+            if (anno != null) {
+                comp.addMissingAnnotations(Collections.singleton(anno));
+            }
+            return super.visitArray(t, p);
+        }
+
+        @Override
+        public Void visitPrimitive(AnnotatedPrimitiveType t, Void p) {
+            AnnotationMirror anno = createIntRangeAnnotations(t);
+            if (anno != null) {
+                t.addMissingAnnotations(Collections.singleton(anno));
+            }
+            return super.visitPrimitive(t, p);
         }
     }
 
@@ -215,7 +185,7 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
 
     @Override
     protected TreeAnnotator createTreeAnnotator() {
-    	// Don't call super.createTreeAnnotator because it includes the PropagationTreeAnnotator.
+        // Don't call super.createTreeAnnotator because it includes the PropagationTreeAnnotator.
         // Only use the PropagationTreeAnnotator for typing new arrays.  The Value Checker
         // computes types differently for all other trees normally typed by the
         // PropagationTreeAnnotator.
@@ -239,72 +209,60 @@ public class CastAnnotatedTypeFactory extends ValueAnnotatedTypeFactory {
         public CastTreeAnnotator(CastAnnotatedTypeFactory factory) {
             super(factory);
         }
-        
-        @Override
-        public Void visitVariable(VariableTree tree, AnnotatedTypeMirror atm) {
-        	if (!TreeUtils.isLocalVariable(tree)) {
-        		AnnotationMirror anno = createIntRangeAnnotations(atm);
-                if (anno != null) {
-                	atm.addMissingAnnotations(Collections.singleton(anno));
-                }
-        	}
-        	return super.visitVariable(tree, atm);
-        }
 
         @Override
         public Void visitTypeCast(TypeCastTree tree, AnnotatedTypeMirror atm) {
-            if (handledByValueChecker(atm)) {
-                AnnotationMirror oldAnno =
-                        getAnnotatedType(tree.getExpression()).getAnnotationInHierarchy(UNKNOWNVAL);
-                if (oldAnno != null) {
-                    TypeMirror newType = atm.getUnderlyingType();
-                    AnnotationMirror newAnno;
-                    Range range = Range.EVERYTHING;
-                    Class<?> newClass = ValueCheckerUtils.getClassFromType(newType);
+            if (!handledByValueChecker(atm)) {
+                return super.visitTypeCast(tree, atm);
+            }
 
-                    if (isIntRange(oldAnno)
-                            && (range = getRange(oldAnno)).isWiderThan(MAX_VALUES)) {
-                        Range castRange = getRange(oldAnno);
-                        if (newClass == byte.class && CastRangeUtil.isUnsignedByte(castRange)) {
-                            newAnno = createIntRangeAnnotation(CastRangeUtil.unsignedByteRange());
-                        } else if (newClass == short.class && CastRangeUtil.isUnsignedShort(castRange)) {
-                            newAnno = createIntRangeAnnotation(CastRangeUtil.unsignedShortRange());
-                        } else if (newClass == String.class) {
-                            newAnno = UNKNOWNVAL;
-                        } else if (newClass == Boolean.class || newClass == boolean.class) {
-                            throw new UnsupportedOperationException(
-                                    "ValueAnnotatedTypeFactory: can't convert int to boolean");
-                        } else {
-                            newAnno =
-                                    createIntRangeAnnotation(NumberUtils.castRange(newType, range));
-                        }
-                        atm.addMissingAnnotations(Collections.singleton(newAnno));
-                        return null;
-                    } else if (AnnotationUtils.areSameByClass(oldAnno, IntVal.class)
-                            && newClass != double.class
-                            && newClass != float.class) {
-                        List<Long> longs = ValueAnnotatedTypeFactory.getIntValues(oldAnno);
-                        List<?> values = castNumbers(newType, longs);
-                        newAnno = createResultingAnnotation(atm.getUnderlyingType(), values);
-                        atm.addMissingAnnotations(Collections.singleton(newAnno));
-                        return null;
-                    } else if ((newClass == byte.class
-                                    || newClass == short.class
-                                    || newClass == char.class)
-                            && oldAnno == UNKNOWNVAL) {
-                        newAnno = createIntRangeAnnotation(NumberUtils.castRange(newType, range));
-                        atm.addMissingAnnotations(Collections.singleton(newAnno));
-                    }
+            AnnotationMirror oldAnno =
+                    getAnnotatedType(tree.getExpression()).getAnnotationInHierarchy(UNKNOWNVAL);
+            if (oldAnno == null) {
+                return super.visitTypeCast(tree, atm);
+            }
+
+            TypeMirror newType = atm.getUnderlyingType();
+            AnnotationMirror newAnno;
+            Range range = Range.EVERYTHING;
+            Class<?> newClass = ValueCheckerUtils.getClassFromType(newType);
+
+            if (isIntRange(oldAnno) && (range = getRange(oldAnno)).isWiderThan(MAX_VALUES)) {
+                Range castRange = getRange(oldAnno);
+                if (newClass == byte.class && CastRangeUtil.isUnsignedByte(castRange)) {
+                    newAnno = createIntRangeAnnotation(CastRangeUtil.unsignedByteRange());
+                } else if (newClass == short.class && CastRangeUtil.isUnsignedShort(castRange)) {
+                    newAnno = createIntRangeAnnotation(CastRangeUtil.unsignedShortRange());
+                } else if (newClass == String.class) {
+                    newAnno = UNKNOWNVAL;
+                } else if (newClass == Boolean.class || newClass == boolean.class) {
+                    throw new UnsupportedOperationException(
+                            "ValueAnnotatedTypeFactory: can't convert int to boolean");
+                } else {
+                    newAnno = createIntRangeAnnotation(NumberUtils.castRange(newType, range));
                 }
+                atm.addMissingAnnotations(Collections.singleton(newAnno));
+                return null;
+            } else if (AnnotationUtils.areSameByClass(oldAnno, IntVal.class)
+                    && newClass != double.class
+                    && newClass != float.class) {
+                List<Long> longs = ValueAnnotatedTypeFactory.getIntValues(oldAnno);
+                List<?> values = castNumbers(newType, longs);
+                newAnno = createResultingAnnotation(atm.getUnderlyingType(), values);
+                atm.addMissingAnnotations(Collections.singleton(newAnno));
+                return null;
+            } else if ((newClass == byte.class || newClass == short.class || newClass == char.class)
+                    && oldAnno == UNKNOWNVAL) {
+                newAnno = createIntRangeAnnotation(NumberUtils.castRange(newType, range));
+                atm.addMissingAnnotations(Collections.singleton(newAnno));
             }
 
             return super.visitTypeCast(tree, atm);
         }
     }
-    
+
     /** Converts a {@code List<A>} to a {@code List<B>}, where A and B are numeric types. */
-    private List<? extends Number> castNumbers(
-            TypeMirror type, List<? extends Number> numbers) {
+    private List<? extends Number> castNumbers(TypeMirror type, List<? extends Number> numbers) {
         if (numbers == null) {
             return null;
         }
