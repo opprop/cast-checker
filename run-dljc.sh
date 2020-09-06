@@ -1,32 +1,55 @@
 #!/bin/bash
 
-# this script depends on the checker branch of Charles's fork of dljc:
-# https://github.com/CharlesZ-Chen/do-like-javac.git
-# (this is not a good way to solve the problem, but currently since
-# dljc override the javac classpath in its cmd, thus I have to add a little code
-# of joining the sys CLASSPATH to the --classpath in dljc's javac cmd.)
+set -e
 
-CUR_DIR=$(pwd)
-ROOT=$(cd $(dirname "$0")/.. && pwd)
-CAST_CHECKER=$ROOT/cast_checker
-DLJC=$ROOT/do-like-javac
+WORKING_DIR=$(pwd)
+JSR308=$(cd $(dirname "$0")/.. && pwd)
 
-export CLASSPATH=$CAST_CHECKER/bin:$CAST_CHECKER/lib
+CFI=$JSR308/checker-framework-inference
+UI=$JSR308/cast-checker
+UIPATH=$UI/build/classes/java/main:$UI/build/resources/main:$UI/build/libs/cast-checker.jar
 
-if [ ! -d $DLJC ] ; then
-    cd $ROOT
-    git clone https://github.com/CharlesZ-Chen/do-like-javac.git --branch checker
-fi
+export AFU=$JSR308/annotation-tools/annotation-file-utilities
+export PATH=$AFU/scripts:$PATH
+export CLASSPATH=$UIPATH
+export external_checker_classpath=$UIPATH
 
-#parsing build command of the target program
-build_cmd=$1
+CFI_LIB=$CFI/lib
+export DYLD_LIBRARY_PATH=$CFI_LIB
+export LD_LIBRARY_PATH=$CFI_LIB
+
+CHECKER=cast.CastChecker
+SOLVER=units.solvers.backend.UnitsSolverEngine
+# DEBUG_SOLVER=checkers.inference.solver.DebugSolver
+SOLVERARGS="solver=Z3smt,collectStatistics=true,writeSolutions=true,noAppend=true"
+
+DLJC=$JSR308/do-like-javac
+
+# Parsing build command of the target program
+build_cmd="$1"
 shift
-while [ $# -gt 0 ]
+while [ "$#" -gt 0 ]
 do
     build_cmd="$build_cmd $1"
     shift
 done
 
-cd $CUR_DIR
+# DLJC Inference
+cd "$WORKING_DIR"
 
-python $DLJC/dljc -t checker --checker cast.CastChecker -- $build_cmd
+typecheck_cmd="python2 $DLJC/dljc -t inference --guess --crashExit \
+--checker $CHECKER --solver $SOLVER --solverArgs=$SOLVERARGS \
+-o logs -m TYPECHECK -afud $WORKING_DIR/annotated -- $build_cmd "
+
+running_cmd=$typecheck_cmd
+
+echo "============ Important variables ============="
+echo "JSR308: $JSR308"
+echo "CLASSPATH: $CLASSPATH"
+echo "build cmd: $build_cmd"
+echo "running cmd: $running_cmd"
+echo "============================================="
+
+eval "$running_cmd"
+
+echo "---- Reminder: do not forget to clean up the project! ----"

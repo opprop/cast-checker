@@ -4,16 +4,12 @@ plugins {
     // Plugin that applies Google-Java-format to the Java files in the project.
     // https://github.com/sherter/google-java-format-gradle-plugin
     // id 'com.github.sherter.google-java-format' version '0.6'
-    id 'org.ajoberstar.grgit' version '3.1.1' apply false
+    id 'com.github.johnrengelman.shadow' version '2.0.4'
 }
-
-import org.ajoberstar.grgit.Grgit
-
 
 apply plugin: 'java'
 
 ext {
-    assert JavaVersion.current() == JavaVersion.VERSION_1_8: "Set JAVA_HOME to JDK 8. Current version is ${JavaVersion.current()}"
     jsr308 = System.getenv('JSR308') ?: file(new File("..")).absolutePath
     cfPath = "${jsr308}/checker-framework"
     jsr308langtoolsPath = "${jsr308}/jsr308-langtools"
@@ -22,7 +18,7 @@ ext {
 }
 
 println '==================================='
-println '         Cast Checker           '
+println '         Cast Checker              '
 println '==================================='
 println ''
 println '-------------------------------'

@@ -35,15 +35,31 @@ public class CastRangeUtil {
 
     /** Return true if this range contains unsigned part of {@code byte} value. */
     public static boolean isUnsignedByte(Range range) {
-        return !range.intersect(Range.create(Byte.MAX_VALUE + 1, Byte.MAX_VALUE * 2 + 1))
-                        .isNothing()
-                && !range.contains(signedByteRange());
+    	Range signedIntersect = range.intersect(signedByteRange());
+    	Range UnSignedIntersect= range.intersect(unsignedByteRange());
+
+    	if (UnSignedIntersect.isNothing()) {
+    		return false;
+    	} else if (signedIntersect.isNothing()) {
+    		return true;
+    	} else {
+    		return (UnSignedIntersect.to - UnSignedIntersect.from)
+    				> (signedIntersect.to - signedIntersect.from);
+    	}
     }
 
     /** Return true if this range contains unsigned part of {@code short} value. */
     public static boolean isUnsignedShort(Range range) {
-        return !range.intersect(Range.create(Short.MAX_VALUE + 1, Short.MAX_VALUE * 2 + 1))
-                        .isNothing()
-                && !range.contains(signedShortRange());
+    	Range signedIntersect = range.intersect(signedShortRange());
+    	Range UnSignedIntersect= range.intersect(unsignedShortRange());
+
+    	if (UnSignedIntersect.isNothing()) {
+    		return false;
+    	} else if (signedIntersect.isNothing()) {
+    		return true;
+    	} else {
+    		return (UnSignedIntersect.to - UnSignedIntersect.from)
+    				> (signedIntersect.to - signedIntersect.from);
+    	}
     }
 }

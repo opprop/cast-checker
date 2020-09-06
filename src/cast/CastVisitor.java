@@ -81,6 +81,14 @@ public class CastVisitor extends ValueVisitor {
                 && exprAnno != null
                 && isIntValRange(castAnno)
                 && isIntValRangeOrUnknown(exprAnno)) {
+//        	if (castType.getUnderlyingType().getKind() == TypeKind.BYTE) {
+//        		AnnotationMirror signed_byte = atypeFactory.createIntRangeAnnotation(CastRangeUtil.signedByteRange());
+//        		AnnotationMirror unsigned_byte = atypeFactory.createIntRangeAnnotation(CastRangeUtil.unsignedByteRange());
+//        	}
+//        	if (castType.getUnderlyingType().getKind() == TypeKind.SHORT) {
+//        		AnnotationMirror signed_short = atypeFactory.createIntRangeAnnotation(CastRangeUtil.signedShortRange());
+//        		AnnotationMirror unsigned_short = atypeFactory.createIntRangeAnnotation(CastRangeUtil.unsignedShortRange());
+//        	}
             if (!isTypeCastSafe(castType, exprType)) {
                 checker.reportError(
                         node, "cast.unsafe", exprType.toString(true), castType.toString(true));

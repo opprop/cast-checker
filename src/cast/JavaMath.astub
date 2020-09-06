@@ -1,0 +1,20 @@
+import org.checkerframework.common.value.qual.PolyValue;
+import org.checkerframework.common.value.qual.IntRange;
+
+package java.lang;
+
+class Math {
+    // min and max
+    // returns the LUB of the 2 value
+    static @PolyValue double max(@PolyValue double a, @PolyValue double b);
+    static @PolyValue float max(@PolyValue float a, @PolyValue float b);
+    static @PolyValue int max(@PolyValue int a, @PolyValue int b);
+    static @PolyValue long max(@PolyValue long a, @PolyValue long b);
+
+    static @PolyValue double min(@PolyValue double a, @PolyValue double b);
+    static @PolyValue float min(@PolyValue float a, @PolyValue float b);
+    static @PolyValue int min(@PolyValue int a, @PolyValue int b);
+    static @PolyValue long min(@PolyValue long a, @PolyValue long b);
+
+    static int toIntExact(@IntRange(from=-2147483648, to=2147483647) long value);
+}

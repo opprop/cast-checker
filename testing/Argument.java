@@ -1,5 +1,4 @@
 
-
 import org.checkerframework.common.value.qual.IntRange;
 import org.checkerframework.common.value.qual.IntVal;
 
@@ -27,7 +26,7 @@ public class Argument {
                                     char[][] char_double_arr) {
         byte data = (byte) value;
         //:: error: (argument.type.incompatible)
-        acceptSignedByte(data);]
+        acceptSignedByte(data);
         acceptUnsignedByte(data);   // OK
 
         byte signed = returnSignedByte();

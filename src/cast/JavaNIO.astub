@@ -1,0 +1,7 @@
+import org.checkerframework.common.value.qual.IntRange;
+
+package java.nio;
+
+abstract class Buffer {
+	public final @IntRange(from=0) int remaining();
+}

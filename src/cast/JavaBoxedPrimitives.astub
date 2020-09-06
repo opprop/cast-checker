@@ -1,0 +1,135 @@
+import org.checkerframework.common.value.qual.PolyValue;
+import org.checkerframework.common.value.qual.IntRange;
+
+import java.io.Serializable;
+import java.lang.Comparable;
+
+package java.lang;
+
+class Number { // implements Serializable
+    @IntRange(from=-128, to=127) byte byteValue(Number this);
+    @IntRange(from=-32768, to=32767) short shortValue(Number this);
+    @IntRange(from=-2147483648, to=2147483647) int intValue(Number this);
+    @PolyValue long longValue(@PolyValue Number this);
+    @PolyValue float floatValue(@PolyValue Number this);
+    @PolyValue double doubleValue(@PolyValue Number this);
+}
+
+@IntRange(from=-128, to=127) class Byte { // extends Number implements Comparable<Byte>
+    static @PolyValue Byte valueOf(@PolyValue byte arg0);
+    @PolyValue Byte(@PolyValue byte arg0);
+
+    @PolyValue byte byteValue(@PolyValue Byte this);
+    @PolyValue short shortValue(@PolyValue Byte this);
+    @PolyValue int intValue(@PolyValue Byte this);
+    @PolyValue long longValue(@PolyValue Byte this);
+    @PolyValue float floatValue(@PolyValue Byte this);
+    @PolyValue double doubleValue(@PolyValue Byte this);
+
+    String toString(@IntRange(from=-128, to=255) Byte this);
+    static String toString(@IntRange(from=-128, to=255) byte arg0);
+    int hashCode(@IntRange(from=-128, to=255) Byte this);
+    static int hashCode(@IntRange(from=-128, to=255) byte arg0);
+
+    boolean equals(@IntRange(from=-128, to=255) Short this, @IntRange(from=-128, to=255) Object arg0);
+    int compareTo(@IntRange(from=-128, to=255) Byte this, @IntRange(from=-128, to=255) Byte arg0);
+    static int compare(@IntRange(from=-128, to=255) byte arg0, @IntRange(from=-128, to=255) byte arg1);
+
+    static @IntRange(from=0, to=255) int toUnsignedInt(@IntRange(from=-128, to=255) byte arg0);
+    static @IntRange(from=0, to=255) long toUnsignedLong(@IntRange(from=-128, to=255) byte arg0);
+}
+
+@IntRange(from=-32768, to=32767) class Short { // extends Number implements Comparable<Short>
+    static @PolyValue Short valueOf(@PolyValue short arg0);
+    @PolyValue Short(@PolyValue short arg0);
+
+    @PolyValue byte byteValue(@PolyValue Short this);
+    @PolyValue short shortValue(@PolyValue Short this);
+    @PolyValue int intValue(@PolyValue Short this);
+    @PolyValue long longValue(@PolyValue Short this);
+    @PolyValue float floatValue(@PolyValue Short this);
+    @PolyValue double doubleValue(@PolyValue Short this);
+
+    String toString(@IntRange(from=-32768, to=65535) Short this);
+    static String toString(@IntRange(from=-32768, to=65535) short arg0);
+    int hashCode(@IntRange(from=-32768, to=65535) Short this);
+    static int hashCode(@IntRange(from=-32768, to=65535) short arg0);
+
+    boolean equals(@IntRange(from=-32768, to=65535) Short this, @IntRange(from=-32768, to=65535) Object arg0);
+    int compareTo(@IntRange(from=-32768, to=65535) Short this, @IntRange(from=-32768, to=65535) hort arg0);
+    static int compare(@IntRange(from=-32768, to=65535) short arg0, @IntRange(from=-32768, to=65535) short arg1);
+    static @PolyValue short reverseBytes(@IntRange(from=-32768, to=65535) short arg0);
+
+    static @IntRange(from=0, to=65535) int toUnsignedInt(@IntRange(from=-32768, to=65535) short arg0);
+    static @IntRange(from=0, to=65535)  long toUnsignedLong(@IntRange(from=-32768, to=65535) short arg0);
+}
+
+@IntRange(from=-2147483648, to=2147483647)
+class Integer { // extends Number implements Comparable<Integer>
+    static @PolyValue Integer valueOf(@PolyValue int arg0);       // auto boxing
+    @PolyValue Integer(@PolyValue int arg0);
+
+    @PolyValue byte byteValue(@PolyValue Integer this);
+    @PolyValue short shortValue(@PolyValue Integer this);
+    @PolyValue int intValue(@PolyValue Integer this);     // auto unboxing
+    @PolyValue long longValue(@PolyValue Integer this);
+    @PolyValue float floatValue(@PolyValue Integer this);
+    @PolyValue double doubleValue(@PolyValue Integer this);
+
+    // gets the integer value of system property name, if not possible it will return val instead
+    static @PolyValue Integer getInteger(String name, @PolyValue int val);
+    static @PolyValue Integer getInteger(String name, @PolyValue Integer val);
+
+    static @IntRange(from=0) long toUnsignedLong(int arg0);
+    static @PolyValue int max(@PolyValue int arg0, @PolyValue int arg1);
+    static @PolyValue int min(@PolyValue int arg0, @PolyValue int arg1);
+}
+
+class Long { // extends Number implements Comparable<Long>
+    static @PolyValue Long valueOf(@PolyValue long arg0);
+    @PolyValue Long(@PolyValue long arg0);
+
+    @PolyValue byte byteValue(@PolyValue Long this);
+    @PolyValue short shortValue(@PolyValue Long this);
+    @PolyValue int intValue(@PolyValue Long this);
+    @PolyValue long longValue(@PolyValue Long this);
+    @PolyValue float floatValue(@PolyValue Long this);
+    @PolyValue double doubleValue(@PolyValue Long this);
+
+    static @PolyValue Long getLong(String arg0, @PolyValue long arg1);
+    static @PolyValue Long getLong(String arg0, @PolyValue Long arg1);
+
+    static @PolyValue long max(@PolyValue long arg0, @PolyValue long arg1);
+    static @PolyValue long min(@PolyValue long arg0, @PolyValue long arg1);
+}
+
+class Float { // extends Number implements Comparable<Float>
+    static @PolyValue Float valueOf(@PolyValue float arg0);
+    @PolyValue Float(@PolyValue float arg0);
+    @PolyValue Float(@PolyValue double arg0);
+
+    @PolyValue byte byteValue(@PolyValue Float this);
+    @PolyValue short shortValue(@PolyValue Float this);
+    @PolyValue int intValue(@PolyValue Float this);
+    @PolyValue long longValue(@PolyValue Float this);
+    @PolyValue float floatValue(@PolyValue Float this);
+    @PolyValue double doubleValue(@PolyValue Float this);
+
+    static @PolyValue float max(@PolyValue float arg0, @PolyValue float arg1);
+    static @PolyValue float min(@PolyValue float arg0, @PolyValue float arg1);
+}
+
+class Double { // extends Number implements Comparable<Double>
+    static @PolyValue Double valueOf(@PolyValue double arg0);
+    @PolyValue Double(@PolyValue double arg0);
+
+    @PolyValue byte byteValue(@PolyValue Double this);
+    @PolyValue short shortValue(@PolyValue Double this);
+    @PolyValue int intValue(@PolyValue Double this);
+    @PolyValue long longValue(@PolyValue Double this);
+    @PolyValue float floatValue(@PolyValue Double this);
+    @PolyValue double doubleValue(@PolyValue Double this);
+
+    static @PolyValue double max(@PolyValue double arg0, @PolyValue double arg1);
+    static @PolyValue double min(@PolyValue double arg0, @PolyValue double arg1);
+}

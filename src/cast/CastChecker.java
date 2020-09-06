@@ -7,6 +7,12 @@ import org.checkerframework.framework.qual.StubFiles;
 @StubFiles({
     "input.astub",
     "output.astub",
+    "JavaUtil.astub",
+    "JavaLang.astub",
+    "JavaIO.astub",
+    "JavaMath.astub",
+    "JavaNIO.astub",
+    "JavaBoxedPrimitives.astub",
 })
 public class CastChecker extends ValueChecker {
 
