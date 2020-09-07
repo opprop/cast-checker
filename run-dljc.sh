@@ -22,6 +22,7 @@ CHECKER=cast.CastChecker
 SOLVER=units.solvers.backend.UnitsSolverEngine
 # DEBUG_SOLVER=checkers.inference.solver.DebugSolver
 SOLVERARGS="solver=Z3smt,collectStatistics=true,writeSolutions=true,noAppend=true"
+CFARGS="-AignoreRangeOverflow"
 
 DLJC=$JSR308/do-like-javac
 
@@ -37,11 +38,14 @@ done
 # DLJC Inference
 cd "$WORKING_DIR"
 
-typecheck_cmd="python2 $DLJC/dljc -t inference --guess --crashExit \
+typecheck_cmd="python2 $DLJC/dljc -t checker --checker $CHECKER --cfArgs=$CFARGS -- $build_cmd"
+
+cfi_typecheck_cmd="python2 $DLJC/dljc -t inference --guess --crashExit \
 --checker $CHECKER --solver $SOLVER --solverArgs=$SOLVERARGS \
+--cfArgs=$CFARGS \
 -o logs -m TYPECHECK -afud $WORKING_DIR/annotated -- $build_cmd "
 
-running_cmd=$typecheck_cmd
+running_cmd=$cfi_typecheck_cmd
 
 echo "============ Important variables ============="
 echo "JSR308: $JSR308"

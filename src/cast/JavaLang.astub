@@ -16,3 +16,12 @@ final @IntRange(from=0, to=65535) class Character implements Serializable, Compa
     @PolyValue Short(@PolyValue char arg0);
     @PolyValue char charValue(@PolyValue Character this);
 }
+
+interface Appendable {
+	Appendable append(CharSequence csq, int start, int end) throws IOException;
+}
+
+interface CharSequence {
+	char charAt(int index);
+	CharSequence subSequence(int start, int end);
+}

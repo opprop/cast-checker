@@ -1,6 +1,5 @@
 package cast;
 
-import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.NewArrayTree;
 import com.sun.source.tree.TypeCastTree;
 import com.sun.source.tree.VariableTree;
